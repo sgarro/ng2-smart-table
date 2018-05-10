@@ -1,56 +1,61 @@
 import { Cell } from './cell';
-import { Column } from './column';
-import { DataSet } from './data-set';
+var Row = (function () {
+    function Row(index, data, _dataSet) {
+        this.index = index;
+        this.data = data;
+        this._dataSet = _dataSet;
+        this.isSelected = false;
+        this.isInEditing = false;
+        this.cells = [];
+        this.process();
+    }
+    Row.prototype.getCell = function (column) {
+        return this.cells.find(function (el) { return el.getColumn() === column; });
+    };
+    Row.prototype.getCells = function () {
+        return this.cells;
+    };
+    Row.prototype.getData = function () {
+        return this.data;
+    };
+    Row.prototype.getIsSelected = function () {
+        return this.isSelected;
+    };
+    Row.prototype.getNewData = function () {
+        var values = Object.assign({}, this.data);
+        this.getCells().forEach(function (cell) { return values[cell.getColumn().id] = cell.newValue; });
+        return values;
+    };
+    Row.prototype.setData = function (data) {
+        this.data = data;
+        this.process();
+    };
 
-export class Row {
+    Row.prototype.getProperty = function(data,property) {
+       let parts = property.split(".");
+       let prop = data;
+       for (var i = 0; i < parts.length && typeof prop !== 'undefined'; i++) {
+           prop = prop[parts[i]];
+       }
+       return prop;
+     }
 
-  isSelected: boolean = false;
-  isInEditing: boolean = false;
-  cells: Array<Cell> = [];
 
-
-  constructor(public index: number, protected data: any, protected _dataSet: DataSet) {
-    this.process();
-  }
-
-  getCell(column: Column): Cell {
-    return this.cells.find(el => el.getColumn() === column);
-  }
-
-  getCells() {
-    return this.cells;
-  }
-
-  getData(): any {
-    return this.data;
-  }
-
-  getIsSelected(): boolean {
-    return this.isSelected;
-  }
-
-  getNewData(): any {
-    const values = Object.assign({}, this.data);
-    this.getCells().forEach((cell) => values[cell.getColumn().id] = cell.newValue);
-    return values;
-  }
-
-  setData(data: any): any {
-    this.data = data;
-    this.process();
-  }
-
-  process() {
-    this.cells = [];
-    this._dataSet.getColumns().forEach((column: Column) => {
-      const cell = this.createCell(column);
-      this.cells.push(cell);
-    });
-  }
-
-  createCell(column: Column): Cell {
-    const defValue = (column as any).settings.defaultValue ? (column as any).settings.defaultValue : '';
-    const value = typeof this.data[column.id] === 'undefined' ? defValue : this.data[column.id];
-    return new Cell(value, this, column, this._dataSet);
-  }
-}
+    Row.prototype.process = function () {
+        var _this = this;
+        this.cells = [];
+        this._dataSet.getColumns().forEach(function (column) {
+            var cell = _this.createCell(column);
+            _this.cells.push(cell);
+        });
+    };
+    Row.prototype.createCell = function (column) {
+        var defValue = column.settings.defaultValue ? column.settings.defaultValue : '';
+        var value = this.getProperty(this.data,column.id);
+        value = typeof value === 'undefined' ? defValue : value;
+        return new Cell(value, this, column, this._dataSet);
+    };
+    return Row;
+}());
+export { Row };
+//# sourceMappingURL=row.js.map
